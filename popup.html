@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hotel Rate Filler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M3 9L12 3L21 9V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      <span>Hotel Rate Filler</span>
+    </div>
+    <button class="settings-btn" id="settingsToggle" title="Settings">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 2V4M12 20V22M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M2 12H4M20 12H22M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-inner">
+      <label class="field-label">Groq API Key</label>
+      <div class="api-key-row">
+        <input type="password" id="apiKeyInput" class="text-input" placeholder="gsk_..." />
+        <button class="btn-icon" id="toggleApiKey">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+      <button class="btn-save" id="saveApiKey">Save Key</button>
+      <div class="api-status" id="apiStatus"></div>
+      <p class="api-hint">Get free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="rates">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+      Rate Sheet
+    </button>
+    <button class="tab" data-tab="fill">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/></svg>
+      Fill Form
+    </button>
+  </div>
+
+  <!-- TAB: Rate Sheet -->
+  <div class="tab-content active" id="tab-rates">
+
+    <div class="section">
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M21 15V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="upload-label">Drop rate sheet image here</p>
+        <p class="upload-sub">or <label class="upload-link" for="fileInput">browse files</label></p>
+        <input type="file" id="fileInput" accept="image/*" hidden />
+      </div>
+      <div class="preview-wrap" id="previewWrap" style="display:none">
+        <img id="previewImg" class="preview-img" alt="preview" />
+        <button class="btn-clear" id="clearImage">✕ Remove</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="parseBtn" disabled>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 9H9l-1 6h4l-1 6 6-8h-4l1-4z" fill="currentColor"/></svg>
+      Extract Rates with Groq AI
+    </button>
+
+    <div class="parse-status" id="parseStatus"></div>
+
+    <!-- Rate Table -->
+    <div class="rate-table-wrap" id="rateTableWrap" style="display:none">
+      <div class="rate-table-header">
+        <span class="section-label">Extracted Rates</span>
+        <button class="btn-text" id="editRatesBtn">Edit</button>
+        <button class="btn-text save-hidden" id="saveRatesBtn">Save</button>
+      </div>
+      <div id="rateTableContainer"></div>
+      <button class="btn-secondary" id="useRatesBtn">✓ Use These Rates</button>
+    </div>
+
+    <div class="saved-badge" id="savedBadge" style="display:none">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Rates saved — go to Fill Form tab
+    </div>
+  </div>
+
+  <!-- TAB: Fill Form -->
+  <div class="tab-content" id="tab-fill">
+
+    <!-- Time Slot -->
+    <div class="section">
+      <label class="section-label">Time Slot (LOS)</label>
+      <div class="slot-grid">
+        <label class="slot-chip"><input type="radio" name="slot" value="2" checked /><span>2 Hrs</span></label>
+        <label class="slot-chip"><input type="radio" name="slot" value="3" /><span>3 Hrs</span></label>
+        <label class="slot-chip"><input type="radio" name="slot" value="6" /><span>6 Hrs</span></label>
+        <label class="slot-chip"><input type="radio" name="slot" value="10" /><span>10 Hrs</span></label>
+        <label class="slot-chip"><input type="radio" name="slot" value="10ONP" /><span>10H ONP</span></label>
+        <label class="slot-chip"><input type="radio" name="slot" value="12" /><span>12 Hrs</span></label>
+        <label class="slot-chip"><input type="radio" name="slot" value="24" /><span>24 Hrs</span></label>
+      </div>
+    </div>
+
+    <!-- Rate Preview Table (all rooms for selected slot) -->
+    <div class="section" id="ratePreviewSection" style="display:none">
+      <label class="section-label">Rates to Fill</label>
+      <div class="preview-rate-table" id="previewRateTable"></div>
+    </div>
+
+    <!-- Fill Options -->
+    <div class="section">
+      <label class="section-label">Options</label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="fillAllDays" />
+        <span>Fill all days (Mon–Sun)</span>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="fillAllRateRows" checked />
+        <span>Fill all rate rows (Base, Single, Double…)</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+        <label class="field-label" style="white-space:nowrap;margin:0">Extra Hr Chg</label>
+        <input type="number" id="extraHrChgInput" class="text-input" placeholder="e.g. 200" style="width:100px;flex:none" min="0" step="0.01" />
+        <span style="font-size:10px;color:var(--text-muted)">(leave blank to skip)</span>
+      </div>
+    </div>
+
+    <!-- Fill Button -->
+    <button class="btn-primary fill-btn" id="fillBtn" disabled>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Fill All Room Types on Page
+    </button>
+
+    <div class="fill-status" id="fillStatus"></div>
+
+    <!-- Results list -->
+    <div class="fill-results" id="fillResults" style="display:none"></div>
+
+    <!-- Save All button — shown after filling -->
+    <button class="btn-secondary save-all-btn" id="saveAllBtn" style="display:none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="2"/>
+        <polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      Save All Rooms
+    </button>
+    <div id="saveAllStatus" style="font-size:12px;min-height:16px;text-align:center"></div>
+
+    <div class="no-rates-warn" id="noRatesWarn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      No rates loaded yet. Upload a rate sheet image first.
+    </div>
+  </div>
+
+</div>
+<script src="popup.js"></script>
+</body>
+</html>
